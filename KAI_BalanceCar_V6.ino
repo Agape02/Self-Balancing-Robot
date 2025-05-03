@@ -1,10 +1,10 @@
-// 头文件导入
+// Include required headers
 #include <tle94112-ino.hpp>
 #include "Arduino_BMI270_BMM150.h"
 #include "Kalman.h"
 
 Kalman kalmanY;
-// -------------------------- 1;PID 参数与变量 --------------------------
+// -------------------------- 1. PID Parameters and Variables --------------------------
 float Kp = 2.5, Ki = 0.1, Kd = 0.08;
 float setpoint = 0.6, previous_error = 0.0, integral = 0.0;
 float accAngle, gyroRate, angle, dt = 0.01;
@@ -12,21 +12,21 @@ float errorSum = 0, lastError = 0;
 unsigned long lastTime = 0;
 int16_t output = 0;
 
-// -------------------------- 运动控制 --------------------------
+// -------------------------- Movement Control State --------------------------
 enum MoveState { STOP, FWD, BACK, LEFT, RIGHT };
 MoveState moveState = STOP;
 float target_setpoint = 0.0, turnOffset = 0.0;
 bool hasPushed = false, debugEnabled = true;
 
-// -------------------------- TLE 电机控制 --------------------------
+// -------------------------- TLE Motor Control --------------------------
 uint8_t motorReg[2][2] = {{REG_ACT_1, REG_PWM_DC_1}, {REG_ACT_3, REG_PWM_DC_3}};
 volatile uint8_t oldDirection[] = { LL_HH, HH_LL };
 Tle94112Ino controller = Tle94112Ino(3,4);
 
-// -------------------------- 全局 IMU 数据 --------------------------
-float gx = 0, gy = 0, gz = 0;
+// -------------------------- Global IMU Data --------------------------
 
-// -------------------------- loop 计时 --------------------------
+
+// -------------------------- loop Timing --------------------------
 unsigned long loopStartTime = 0;
 
 // -------------------------- Motor Control --------------------------
@@ -59,7 +59,7 @@ int16_t motor_ramp(int16_t motor_in) {
     return (motor_in > 0) ? motor_in + 20 : motor_in - 20;
 }
 
-// -------------------------- 初始化 --------------------------
+// -------------------------- initialisation --------------------------
 void setMultiHalfbridge(bool state) {
     digitalWrite(4, state ? HIGH : LOW);
     if (state) {
@@ -91,7 +91,7 @@ void setup() {
     Serial.println("Started");
 }
 
-// -------------------------- 控制逻辑函数 --------------------------
+// -------------------------- Control Logic Functions --------------------------
 void readIMUData() {
     float ax, ay, az;
     IMU.readAcceleration(ax, ay, az);
@@ -102,7 +102,7 @@ void readIMUData() {
     accAngle = atan2(ax, az) * 180 / PI;
     kalmanY.getAngle(accAngle,gy,dt);
     gyroRate = gy;
-    angle = accAngle; // 使用加速度角度直接作为当前角度，无滤波
+    angle = accAngle; // Use acceleration angle directly as current angle, no filter control logic function
 }
 
 void updateMovementControl(float Gyroz) {
@@ -171,7 +171,7 @@ void debugPrint(unsigned long loopDuration) {
     }
 }
 
-// -------------------------- 串口输入处理 --------------------------
+// -------------------------- Serial Input Processing --------------------------
 void checkSerialInput() {
     if (!Serial.available()) return;
     String input = Serial.readStringUntil('\n');
@@ -193,7 +193,7 @@ void checkSerialInput() {
     else if (input == "bridge off") setMultiHalfbridge(false);
 }
 
-// -------------------------- 主循环 --------------------------
+// -------------------------- Main Loop --------------------------
 void loop() {
     loopStartTime = millis();
     checkSerialInput();
